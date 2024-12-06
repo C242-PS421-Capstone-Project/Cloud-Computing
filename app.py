@@ -4,11 +4,17 @@ from model import load_model, predict_image
 
 app = Flask(__name__)
 
+# GCS configuration
+BUCKET_NAME = "fresh-fish-bucket"  # Replace with your bucket name
+GCS_MODEL_PATH = "model-in-prod/fish_freshness_model.h5"  # Path in GCS bucket
+LOCAL_MODEL_PATH = "./temp_model.h5"
+
 # Load the model once at the start
-model = load_model()
+model = load_model(bucket_name=BUCKET_NAME, gcs_model_path=GCS_MODEL_PATH, local_model_path=LOCAL_MODEL_PATH)
 
 @app.route('/predict', methods=['POST'])
 def identifikasi():
+    """Handle image prediction requests."""
     image_file = request.files.get('image')
 
     if not image_file:
@@ -25,7 +31,6 @@ def identifikasi():
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)  # Ensure the temporary file is always removed
-
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
