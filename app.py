@@ -1,16 +1,52 @@
+from firebase_admin import firestore
 from flask import Flask, request, jsonify
 import os
 import uuid
 from datetime import datetime
+from google.cloud import secretmanager
 from model import load_model_from_url, predict_image
+import firebase_admin
+from firebase_admin import credentials
 
 app = Flask(__name__)
+
+# Firebase setup
+def get_firebase_credentials():
+    """Retrieve Firebase credentials from Google Secret Manager."""
+    secret_name = "projects/fresh-fish-api/secrets/firebase/versions/latest"
+    client = secretmanager.SecretManagerServiceClient()
+    response = client.access_secret_version(request={"name": secret_name})
+    credentials = response.payload.data.decode("utf-8")
+    return credentials
+
+def initialize_firestore():
+    """Initialize Firestore connection."""
+    firebase_credentials = get_firebase_credentials()
+    cred = credentials.Certificate(eval(firebase_credentials))  # Convert to dictionary and load as certificate
+    firebase_admin.initialize_app(cred)
+    return firestore.client()
+
+db = initialize_firestore()
 
 # URL Bucket Configuration
 BUCKET_MODEL_URL = "https://storage.googleapis.com/fresh-fish-bucket/model-in-prod/fish_freshness_model.h5"
 
 # Load the model once at the start
 model = load_model_from_url(BUCKET_MODEL_URL)
+
+def save_to_firestore(prediction_id, result, message):
+    """Save prediction result to Firestore."""
+    try:
+        prediction_doc = {
+            "id": prediction_id,
+            "result": result,
+            "message": message,
+            "createdAt": datetime.utcnow().isoformat() + "Z"
+        }
+        db.collection('predictions').document(prediction_id).set(prediction_doc)
+        print(f"Prediction saved to Firestore: {prediction_doc}")
+    except Exception as e:
+        print(f"Error saving prediction to Firestore: {e}")
 
 @app.route('/predict', methods=['POST'])
 def identifikasi():
@@ -44,6 +80,9 @@ def identifikasi():
         # Generate unique ID and timestamp
         prediction_id = str(uuid.uuid4())
         timestamp = datetime.utcnow().isoformat() + "Z"
+
+        # Save the prediction to Firestore
+        save_to_firestore(prediction_id, result, message)
 
         # Construct response
         response = {
