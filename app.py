@@ -107,6 +107,25 @@ def identifikasi():
         if os.path.exists(temp_path):
             os.remove(temp_path)  # Ensure the temporary file is always removed
 
+@app.route('/predictions', methods=['GET'])
+def get_predictions():
+    """Fetch predictions data from Firestore."""
+    try:
+        predictions_ref = db.collection('predictions')
+        docs = predictions_ref.stream()
+        predictions = []
+        for doc in docs:
+            predictions.append(doc.to_dict())
+        return jsonify({
+            "status": "success",
+            "data": predictions
+        }), 200
+    except Exception as e:
+        print(f"Error fetching predictions: {e}")
+        return jsonify({
+            "status": "fail",
+            "message": "An error occurred while fetching data"
+        }), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
