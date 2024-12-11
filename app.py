@@ -8,6 +8,7 @@ from model import load_model_from_url, predict_image
 import firebase_admin
 from firebase_admin import credentials
 
+
 app = Flask(__name__)
 
 # Firebase setup
