@@ -8,7 +8,6 @@ from model import load_model_from_url, predict_image
 import firebase_admin
 from firebase_admin import credentials
 
-
 app = Flask(__name__)
 
 # Firebase setup
@@ -42,7 +41,7 @@ def save_to_firestore(prediction_id, result, message):
             "id": prediction_id,
             "result": result,
             "message": message,
-            "createdAt": datetime.utcnow().isoformat() + "Z"
+            "createdAt": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")  # Adjusted format
         }
         db.collection('predictions').document(prediction_id).set(prediction_doc)
         print(f"Prediction saved to Firestore: {prediction_doc}")
@@ -80,7 +79,7 @@ def identifikasi():
 
         # Generate unique ID and timestamp
         prediction_id = str(uuid.uuid4())
-        timestamp = datetime.utcnow().isoformat() + "Z"
+        timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")  # Adjusted format
 
         # Save the prediction to Firestore
         save_to_firestore(prediction_id, result, message)
