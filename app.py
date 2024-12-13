@@ -10,7 +10,6 @@ from firebase_admin import credentials
 
 app = Flask(__name__)
 
-# Firebase setup
 def get_firebase_credentials():
     """Retrieve Firebase credentials from Google Secret Manager."""
     secret_name = "projects/fresh-fish-api/secrets/firebase/versions/latest"
@@ -22,16 +21,14 @@ def get_firebase_credentials():
 def initialize_firestore():
     """Initialize Firestore connection."""
     firebase_credentials = get_firebase_credentials()
-    cred = credentials.Certificate(eval(firebase_credentials))  # Convert to dictionary and load as certificate
+    cred = credentials.Certificate(eval(firebase_credentials))
     firebase_admin.initialize_app(cred)
     return firestore.client()
 
 db = initialize_firestore()
 
-# URL Bucket Configuration
 BUCKET_MODEL_URL = "https://storage.googleapis.com/fresh-fish-bucket/model-in-prod/fish_freshness_model.h5"
 
-# Load the model once at the start
 model = load_model_from_url(BUCKET_MODEL_URL)
 
 def save_to_firestore(prediction_id, result, message):
@@ -41,7 +38,7 @@ def save_to_firestore(prediction_id, result, message):
             "id": prediction_id,
             "result": result,
             "message": message,
-            "createdAt": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")  # Adjusted format
+            "createdAt": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
         }
         db.collection('predictions').document(prediction_id).set(prediction_doc)
         print(f"Prediction saved to Firestore: {prediction_doc}")
@@ -63,11 +60,9 @@ def identifikasi():
     image_file.save(temp_path)
 
     try:
-        # Generate prediction
         prediction = predict_image(model, temp_path, target_size=(128, 128))
-        print(f"Prediction output: {prediction}")  # Debugging output
+        print(f"Prediction output: {prediction}")
 
-        # Parse prediction result
         if prediction.startswith("Fresh"):
             result = "Fresh"
             message = "Fish Looks Fresh!"
@@ -77,14 +72,11 @@ def identifikasi():
         else:
             raise ValueError("Unexpected prediction output")
 
-        # Generate unique ID and timestamp
         prediction_id = str(uuid.uuid4())
-        timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")  # Adjusted format
+        timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
-        # Save the prediction to Firestore
         save_to_firestore(prediction_id, result, message)
 
-        # Construct response
         response = {
             "status": "success",
             "message": "Model is predicted successfully",
@@ -98,14 +90,14 @@ def identifikasi():
         return jsonify(response), 201
 
     except Exception as e:
-        print(f"Error: {e}")  # Debugging output
+        print(f"Error: {e}")
         return jsonify({
             "status": "fail",
             "message": "An error occurred in making a prediction"
         }), 400
     finally:
         if os.path.exists(temp_path):
-            os.remove(temp_path)  # Ensure the temporary file is always removed
+            os.remove(temp_path)
 
 @app.route('/predictions', methods=['GET'])
 def get_predictions():
@@ -127,7 +119,6 @@ def get_predictions():
             "message": "An error occurred while fetching data"
         }), 500
 
-# Daftar artikel (contoh)
 articles = [
     {
         "image_url": "https://storage.googleapis.com/fresh-fish-bucket/image-in-prod/tuna.jpg",
