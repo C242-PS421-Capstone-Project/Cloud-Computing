@@ -127,5 +127,34 @@ def get_predictions():
             "message": "An error occurred while fetching data"
         }), 500
 
+# Daftar artikel (contoh)
+articles = [
+    {
+        "image_url": "https://storage.googleapis.com/fresh-fish-bucket/image-in-prod/tuna.jpg",
+        "title": "Mengenal Ikan Tuna",
+        "description": "Ikan tuna merupakan salah satu ikan laut yang banyak dikonsumsi karena kaya akan protein.",
+    },
+    {
+        "image_url": "https://storage.googleapis.com/fresh-fish-bucket/image-in-prod/salmon.jpg",
+        "title": "Manfaat Ikan Salmon",
+        "description": "Ikan salmon mengandung asam lemak omega-3 yang baik untuk kesehatan jantung.",
+    }
+]
+
+@app.route('/articles', methods=['GET'])
+def get_articles():
+    """Fetch articles data."""
+    try:
+        return jsonify({
+            "status": "success",
+            "data": articles
+        }), 200
+    except Exception as e:
+        print(f"Error fetching articles: {e}")
+        return jsonify({
+            "status": "fail",
+            "message": "An error occurred while fetching articles"
+        }), 500
+
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
